@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { IoMdStopwatch } from "react-icons/io"
 import { useNavigate } from "react-router-dom";
 import useData from "../stores/DataUserStore";
+import { useShallow } from "zustand/shallow";
 
 interface TimerProps {
     selectedAnswer: string | null
@@ -20,7 +21,10 @@ const Timer = ({ selectedAnswer, correctAnswer, question, total_questions }: Tim
     const userId = useData((state) => state.userData?.id);
     const [timerEnded, setTimerEnded] = useState<boolean>(false);
 
-    const saveQuizAnswer = useData((state) => state.saveQuizAnswer)
+    const { saveQuizAnswer, userData } = useData(useShallow((state) => ({
+        userData: state.userData,
+        saveQuizAnswer: state.saveQuizAnswer
+    })))
 
     useEffect(() => {
         const timerInterval = setInterval(() => {
@@ -63,7 +67,12 @@ const Timer = ({ selectedAnswer, correctAnswer, question, total_questions }: Tim
             };
 
             saveQuizAnswer(dataAnswer);
-            alert("Time has run out!");
+            
+            if (userData && userData.quiz_answer) {
+                alert("Time has run out!");
+                userData.quiz_answer.quiz_completed = true;
+                localStorage.setItem('userData', JSON.stringify(userData));
+            }
             navigate(`/quizresult/${userId}`);
         }
     }, [timeLeft, timerEnded, selectedAnswer, correctAnswer, correctScore, saveQuizAnswer, navigate, userId]);
